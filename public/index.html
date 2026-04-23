@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Personalabteilung – Mitarbeitersuche</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #eef2f7, #dfe9f3);
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: #ffffff;
+            border-radius: 18px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            color: #1e3a8a;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 30px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 18px;
+            color: #111827;
+        }
+
+        label {
+            display: block;
+            margin: 10px 0 6px;
+            font-weight: bold;
+        }
+
+        input, select, button {
+            width: 100%;
+            padding: 10px 12px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            font-size: 14px;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #2563eb;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        button {
+            margin-top: 14px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s ease;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        .results {
+            margin-top: 20px;
+        }
+
+        .results h2 {
+            margin-bottom: 12px;
+            color: #1e3a8a;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            background: white;
+            border-radius: 12px;
+        }
+
+        thead {
+            background: #1e3a8a;
+            color: white;
+        }
+
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        tr:hover td {
+            background: #f9fafb;
+        }
+
+        .message {
+            padding: 14px;
+            border-radius: 10px;
+            margin-top: 15px;
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Personalabteilung – Suchsystem</h1>
+        <p class="subtitle">Suche nach Mitarbeitenden, Abteilungen und Gehältern</p>
+
+        <div class="grid">
+            <!-- Suche Mitarbeiter-ID -->
+            <div class="card">
+                <h2>1. Mitarbeitende suchen</h2>
+                <label for="empNo">Mitarbeiter-ID</label>
+                <input type="number" id="empNo" placeholder="z.B. 10001" />
+                <button onclick="searchEmployee()">Suchen</button>
+            </div>
+
+            <!-- Abteilung -->
+            <div class="card">
+                <h2>2. Abteilung auswählen</h2>
+                <label for="department">Abteilung</label>
+                <select id="department">
+                    <option value="">Bitte wählen</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Development">Development</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Human Resources">Human Resources</option>
+                    <option value="Production">Production</option>
+                </select>
+                <button onclick="searchDepartment()">Anzeigen</button>
+            </div>
+
+            <!-- Gehalt -->
+            <div class="card">
+                <h2>3. Gehaltssuche</h2>
+                <label for="minSalary">Minimum</label>
+                <input type="number" id="minSalary" placeholder="z.B. 50000" />
+
+                <label for="maxSalary">Maximum</label>
+                <input type="number" id="maxSalary" placeholder="z.B. 80000" />
+
+                <button onclick="searchSalary()">Suchen</button>
+            </div>
+        </div>
+
+        <div class="results">
+            <h2>Resultate</h2>
+            <div id="message" class="message">Noch keine Suche ausgeführt.</div>
+            <div id="tableContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        const messageBox = document.getElementById("message");
+        const tableContainer = document.getElementById("tableContainer");
+
+        function showMessage(text, type = "") {
+            messageBox.className = "message";
+            if (type) {
+                messageBox.classList.add(type);
+            }
+            messageBox.textContent = text;
+        }
+
+        function renderTable(columns, data) {
+            // d) Tabelle bei jeder neuen Anfrage ersetzen
+            tableContainer.innerHTML = "";
+
+            if (!data || data.length === 0) {
+                showMessage("Keine Resultate gefunden.", "error");
+                return;
+            }
+
+            showMessage(`${data.length} Resultat(e) gefunden.`, "success");
+
+            const table = document.createElement("table");
+
+            const thead = document.createElement("thead");
+            const headRow = document.createElement("tr");
+            columns.forEach(col => {
+                const th = document.createElement("th");
+                th.textContent = col;
+                headRow.appendChild(th);
+            });
+            thead.appendChild(headRow);
+
+            const tbody = document.createElement("tbody");
+            data.forEach(row => {
+                const tr = document.createElement("tr");
+                Object.values(row).forEach(value => {
+                    const td = document.createElement("td");
+                    td.textContent = value ?? "-";
+                    tr.appendChild(td);
+                });
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            tableContainer.appendChild(table);
+        }
+
+        async function searchEmployee() {
+            const empNo = document.getElementById("empNo").value.trim();
+
+            if (!empNo) {
+                tableContainer.innerHTML = "";
+                showMessage("Bitte eine Mitarbeiter-ID eingeben.", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search-employee?empNo=${encodeURIComponent(empNo)}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    tableContainer.innerHTML = "";
+                    showMessage(result.message || "Fehler bei der Suche.", "error");
+                    return;
+                }
+
+                renderTable(result.columns, result.data);
+            } catch (error) {
+                tableContainer.innerHTML = "";
+                showMessage("Serverfehler bei der Mitarbeitersuche.", "error");
+            }
+        }
+
+        async function searchDepartment() {
+            const department = document.getElementById("department").value;
+
+            if (!department) {
+                tableContainer.innerHTML = "";
+                showMessage("Bitte eine Abteilung auswählen.", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/search-department?department=${encodeURIComponent(department)}`);
+                const result = await response.json();
+
+                if (!result.success) {
+                    tableContainer.innerHTML = "";
+                    showMessage(result.message || "Fehler bei der Abfrage.", "error");
+                    return;
+                }
+
+                renderTable(result.columns, result.data);
+            } catch (error) {
+                tableContainer.innerHTML = "";
+                showMessage("Serverfehler bei der Abteilungssuche.", "error");
+            }
+        }
+
+        async function searchSalary() {
+            const minSalary = document.getElementById("minSalary").value.trim();
+            const maxSalary = document.getElementById("maxSalary").value.trim();
+
+            if (!minSalary || !maxSalary) {
+                tableContainer.innerHTML = "";
+                showMessage("Bitte Minimum und Maximum eingeben.", "error");
+                return;
+            }
+
+            try {
+                const response = await fetch(
+                    `/api/search-salary?minSalary=${encodeURIComponent(minSalary)}&maxSalary=${encodeURIComponent(maxSalary)}`
+                );
+                const result = await response.json();
+
+                if (!result.success) {
+                    tableContainer.innerHTML = "";
+                    showMessage(result.message || "Fehler bei der Gehaltssuche.", "error");
+                    return;
+                }
+
+                renderTable(result.columns, result.data);
+            } catch (error) {
+                tableContainer.innerHTML = "";
+                showMessage("Serverfehler bei der Gehaltssuche.", "error");
+            }
+        }
+    </script>
+</body>
+</html>
