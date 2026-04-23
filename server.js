@@ -168,6 +168,40 @@ app.get("/api/search-salary", (req, res) => {
     });
 });
 
+/**
+ * Bonusaufgabe e)
+ * Gehaltsstatistiken pro Abteilung:
+ * Durchschnitt, Minimum, Maximum
+ */
+app.get("/api/salary-stats", (req, res) => {
+    const sql = `
+        SELECT
+            d.dept_name AS abteilung,
+            ROUND(AVG(s.salary), 2) AS durchschnittsgehalt,
+            MIN(s.salary) AS min_gehalt,
+            MAX(s.salary) AS max_gehalt
+        FROM departments d
+        INNER JOIN dept_emp de
+            ON d.dept_no = de.dept_no
+            AND de.to_date = '9999-01-01'
+        INNER JOIN salaries s
+            ON de.emp_no = s.emp_no
+            AND s.to_date = '9999-01-01'
+        GROUP BY d.dept_name
+        ORDER BY d.dept_name
+    `;
+
+    con.query(sql, (err, results) => {
+        if (err) return sendError(res, err);
+
+        res.json({
+            success: true,
+            columns: ["Abteilung", "Durchschnittsgehalt", "Minimales Gehalt", "Maximales Gehalt"],
+            data: results
+        });
+    });
+});
+
 app.listen(PORT, () => {
     console.log(`Server läuft auf http://localhost:${PORT}`);
 });

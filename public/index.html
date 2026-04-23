@@ -183,6 +183,13 @@
 
                 <button onclick="searchSalary()">Suchen</button>
             </div>
+
+            <!-- Gehaltsstatistiken -->
+            <div class="card">
+                <h2>4. Gehaltsstatistiken</h2>
+                <p>Durchschnitt, Minimum und Maximum pro Abteilung anzeigen</p>
+                <button onclick="loadSalaryStats()">Statistiken anzeigen</button>
+            </div>
         </div>
 
         <div class="results">
@@ -320,6 +327,23 @@
             } catch (error) {
                 tableContainer.innerHTML = "";
                 showMessage("Serverfehler bei der Gehaltssuche.", "error");
+            }
+        }
+        async function loadSalaryStats() {
+            try {
+                const response = await fetch("/api/salary-stats");
+                const result = await response.json();
+
+                if (!result.success) {
+                    tableContainer.innerHTML = "";
+                    showMessage(result.message || "Fehler bei der Statistik-Abfrage.", "error");
+                    return;
+                }
+
+                renderTable(result.columns, result.data);
+            } catch (error) {
+                tableContainer.innerHTML = "";
+                showMessage("Serverfehler bei den Gehaltsstatistiken.", "error");
             }
         }
     </script>
